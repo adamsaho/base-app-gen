@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Obsidian Vault — Auto-compounding yield, on-chain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="base:app_id" content="6a3a0d1e73eebca465279cbb" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0D0F;
+    --panel:#15181C;
+    --panel-raised:#191D22;
+    --ink:#E8E6E1;
+    --ink-dim:#9A9C9A;
+    --ink-faint:#5C5F60;
+    --line:#26292E;
+    --line-soft:#1D2024;
+    --signal:#7CFFB2;
+    --signal-dim:#3E6B53;
+    --accent:#FF6B4A;
+    --accent-dim:#7A3A2A;
+    --radius:2px;
+    --serif:'Fraunces', serif;
+    --sans:'Inter', sans-serif;
+    --mono:'JetBrains Mono', monospace;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+  }
+
+  a{color:inherit; text-decoration:none;}
+  :focus-visible{outline:2px solid var(--signal); outline-offset:2px;}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 32px;}
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(11,13,15,0.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .nav-inner{
+    display:flex; align-items:center; justify-content:space-between;
+    height:68px;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--serif); font-weight:600; font-size:19px;
+    letter-spacing:0.01em;
+  }
+  .logo .mark{
+    width:22px; height:22px; flex:none;
+  }
+  .nav-links{display:flex; gap:36px; align-items:center;}
+  .nav-links a{
+    font-size:13.5px; color:var(--ink-dim); font-weight:500;
+    transition:color .15s ease;
+  }
+  .nav-links a:hover{color:var(--ink);}
+  .nav-cta{
+    font-family:var(--mono); font-size:12.5px; font-weight:500;
+    color:var(--bg); background:var(--ink);
+    padding:10px 18px; border-radius:var(--radius);
+    transition:background .15s ease, transform .15s ease;
+    border:1px solid var(--ink);
+  }
+  .nav-cta:hover{background:var(--signal); border-color:var(--signal); transform:translateY(-1px);}
+  .nav-toggle{display:none;}
+
+  @media (max-width:760px){
+    .nav-links{display:none;}
+    .nav-cta{display:none;}
+  }
+
+  /* ---------- HERO ---------- */
+  header.hero{
+    padding:92px 0 64px;
+    border-bottom:1px solid var(--line-soft);
+    position:relative;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns:1.15fr 0.85fr;
+    gap:56px;
+    align-items:end;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; color:var(--signal);
+    letter-spacing:0.08em; text-transform:uppercase;
+    display:flex; align-items:center; gap:8px;
+    margin-bottom:22px;
+  }
+  .eyebrow .dot{
+    width:6px; height:6px; border-radius:50%; background:var(--signal);
+    box-shadow:0 0 0 0 rgba(124,255,178,0.5);
+    animation:pulse 2.2s ease-out infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(124,255,178,0.45);}
+    70%{box-shadow:0 0 0 8px rgba(124,255,178,0);}
+    100%{box-shadow:0 0 0 0 rgba(124,255,178,0);}
+  }
+  h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(40px, 5.4vw, 68px);
+    line-height:1.02;
+    letter-spacing:-0.01em;
+    max-width:13ch;
+  }
+  h1 em{
+    font-style:italic; font-weight:500; color:var(--ink-dim);
+  }
+  .hero-sub{
+    margin-top:24px;
+    font-size:17px;
+    line-height:1.6;
+    color:var(--ink-dim);
+    max-width:42ch;
+  }
+  .hero-actions{
+    margin-top:36px;
+    display:flex; gap:14px; align-items:center;
+  }
+  .btn-primary{
+    font-family:var(--mono); font-size:13.5px; font-weight:500;
+    background:var(--accent); color:#150905;
+    padding:14px 26px; border-radius:var(--radius);
+    border:1px solid var(--accent);
+    transition:transform .15s ease, box-shadow .15s ease;
+    cursor:pointer;
+  }
+  .btn-primary:hover{
+    transform:translateY(-2px);
+    box-shadow:0 6px 24px -6px rgba(255,107,74,0.45);
+  }
+  .btn-ghost{
+    font-family:var(--mono); font-size:13.5px; color:var(--ink-dim);
+    padding:14px 18px; border:1px solid var(--line);
+    border-radius:var(--radius);
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .btn-ghost:hover{border-color:var(--ink-dim); color:var(--ink);}
+
+  /* hero side: tvl readout */
+  .tvl-card{
+    border:1px solid var(--line);
+    background:var(--panel);
+    padding:26px 26px 22px;
+    border-radius:var(--radius);
+  }
+  .tvl-label{
+    font-family:var(--mono); font-size:11px; color:var(--ink-faint);
+    text-transform:uppercase; letter-spacing:0.08em;
+    display:flex; justify-content:space-between;
+  }
+  .tvl-number{
+    font-family:var(--serif); font-weight:600;
+    font-size:44px; margin-top:10px; letter-spacing:-0.01em;
+    font-variant-numeric:tabular-nums;
+  }
+  .tvl-number sup{font-size:18px; color:var(--ink-faint); font-weight:400;}
+  .tvl-foot{
+    margin-top:18px; padding-top:16px;
+    border-top:1px solid var(--line-soft);
+    display:grid; grid-template-columns:1fr 1fr; gap:14px;
+  }
+  .tvl-foot div{font-family:var(--mono); font-size:11.5px;}
+  .tvl-foot .k{color:var(--ink-faint); margin-bottom:4px;}
+  .tvl-foot .v{color:var(--ink); font-size:13px;}
+  .tvl-foot .v.up{color:var(--signal);}
+
+  /* ---------- LEDGER (signature element) ---------- */
+  section.ledger{
+    padding:80px 0 90px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .section-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-bottom:38px; gap:24px; flex-wrap:wrap;
+  }
+  .section-head h2{
+    font-family:var(--serif); font-weight:600; font-size:30px;
+  }
+  .section-head p{color:var(--ink-dim); font-size:14.5px; max-width:38ch;}
+
+  .ledger-table{
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .ledger-row-head, .vault-row{
+    display:grid;
+    grid-template-columns:2.4fr 1fr 1fr 1.3fr 1fr 100px;
+    align-items:center;
+    padding:0 24px;
+  }
+  .ledger-row-head{
+    height:42px;
+    background:var(--panel-raised);
+    border-bottom:1px solid var(--line);
+    font-family:var(--mono); font-size:11px; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--ink-faint);
+  }
+  .vault-row{
+    height:84px;
+    border-bottom:1px solid var(--line-soft);
+    background:var(--panel);
+    transition:background .15s ease;
+  }
+  .vault-row:last-child{border-bottom:none;}
+  .vault-row:hover{background:var(--panel-raised);}
+
+  .vault-name{display:flex; align-items:center; gap:14px;}
+  .vault-icon{
+    width:34px; height:34px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:12px; font-weight:600;
+    flex:none; border:1px solid var(--line);
+  }
+  .vault-name .meta{display:flex; flex-direction:column; gap:3px;}
+  .vault-name .title{font-size:15px; font-weight:500;}
+  .vault-name .strategy{font-family:var(--mono); font-size:11.5px; color:var(--ink-faint);}
+
+  .vault-row .col-label{
+    display:none;
+  }
+  .apy{
+    font-family:var(--mono); font-weight:600; font-size:18px; color:var(--signal);
+    font-variant-numeric:tabular-nums;
+  }
+  .apy-sub{display:block; font-size:10.5px; color:var(--ink-faint); font-weight:400; margin-top:2px;}
+  .tvl-cell{font-family:var(--mono); font-size:13.5px; color:var(--ink-dim); font-variant-numeric:tabular-nums;}
+
+  .util-wrap{display:flex; align-items:center; gap:10px;}
+  .util-svg{width:64px; height:24px; flex:none;}
+  .util-pct{font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); width:32px;}
+
+  .risk-pill{
+    font-family:var(--mono); font-size:10.5px; padding:4px 9px;
+    border-radius:20px; border:1px solid var(--line);
+    color:var(--ink-dim); width:fit-content; text-transform:uppercase; letter-spacing:0.04em;
+  }
+  .risk-pill.low{border-color:var(--signal-dim); color:var(--signal);}
+  .risk-pill.med{border-color:#5C5430; color:#D9C56A;}
+
+  .row-action{text-align:right;}
+  .row-action button{
+    font-family:var(--mono); font-size:12px; color:var(--ink);
+    background:transparent; border:1px solid var(--line);
+    padding:9px 14px; border-radius:var(--radius);
+    cursor:pointer; transition:all .15s ease;
+  }
+  .row-action button:hover{border-color:var(--signal); color:var(--signal);}
+
+  @media (max-width:880px){
+    .ledger-row-head{display:none;}
+    .vault-row{
+      grid-template-columns:1fr;
+      height:auto; padding:20px 20px; row-gap:14px;
+    }
+    .vault-row > div{display:flex; justify-content:space-between; align-items:center; width:100%;}
+    .vault-row .col-label{
+      display:inline; font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); text-transform:uppercase;
+    }
+    .row-action{justify-content:flex-end;}
+  }
+
+  /* ---------- HOW IT WORKS ---------- */
+  section.how{padding:84px 0; border-bottom:1px solid var(--line-soft);}
+  .how-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+    background:var(--line-soft); border:1px solid var(--line-soft);
+  }
+  .how-step{
+    background:var(--bg); padding:34px 30px;
+  }
+  .how-step .tag{
+    font-family:var(--mono); font-size:11px; color:var(--ink-faint);
+    display:block; margin-bottom:18px;
+  }
+  .how-step h3{
+    font-family:var(--serif); font-weight:600; font-size:21px; margin-bottom:12px;
+  }
+  .how-step p{font-size:14px; color:var(--ink-dim); line-height:1.6;}
+
+  @media (max-width:760px){
+    .how-grid{grid-template-columns:1fr;}
+  }
+
+  /* ---------- SECURITY STRIP ---------- */
+  section.security{padding:64px 0; border-bottom:1px solid var(--line-soft);}
+  .sec-flex{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:30px;
+  }
+  .sec-copy{max-width:36ch;}
+  .sec-copy h2{font-family:var(--serif); font-size:26px; font-weight:600; margin-bottom:10px;}
+  .sec-copy p{color:var(--ink-dim); font-size:14.5px; line-height:1.6;}
+  .sec-stats{display:flex; gap:40px;}
+  .sec-stat .n{font-family:var(--mono); font-size:26px; color:var(--ink); font-weight:600;}
+  .sec-stat .l{font-family:var(--mono); font-size:11px; color:var(--ink-faint); text-transform:uppercase; margin-top:4px;}
+
+  @media (max-width:600px){
+    .sec-stats{gap:24px; flex-wrap:wrap;}
+  }
+
+  /* ---------- DEPOSIT CALCULATOR ---------- */
+  section.calc{padding:90px 0;}
+  .calc-box{
+    border:1px solid var(--line);
+    background:var(--panel);
+    border-radius:var(--radius);
+    display:grid; grid-template-columns:1fr 1fr;
+  }
+  .calc-form{padding:42px; border-right:1px solid var(--line);}
+  .calc-result{padding:42px; background:var(--panel-raised); display:flex; flex-direction:column; justify-content:center;}
+  .calc-form label{
+    font-family:var(--mono); font-size:11px; text-transform:uppercase;
+    color:var(--ink-faint); letter-spacing:0.06em; display:block; margin-bottom:10px;
+  }
+  .field{margin-bottom:26px;}
+  .amount-input{
+    display:flex; align-items:center; border:1px solid var(--line);
+    border-radius:var(--radius); background:var(--bg);
+    padding:0 16px;
+  }
+  .amount-input span{font-family:var(--mono); color:var(--ink-faint); font-size:15px;}
+  .amount-input input{
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--ink); font-family:var(--mono); font-size:20px; padding:14px 10px;
+    width:100%;
+  }
+  select{
+    width:100%; background:var(--bg); border:1px solid var(--line);
+    color:var(--ink); font-family:var(--mono); font-size:14px;
+    padding:13px 14px; border-radius:var(--radius); appearance:none;
+    cursor:pointer;
+  }
+  .slider-row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;}
+  .slider-row .val{font-family:var(--mono); color:var(--signal); font-size:14px;}
+  input[type="range"]{
+    width:100%; accent-color:var(--signal); height:4px; cursor:pointer;
+  }
+
+  .result-label{font-family:var(--mono); font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.06em;}
+  .result-number{
+    font-family:var(--serif); font-weight:600; font-size:46px; margin:10px 0 4px;
+    font-variant-numeric:tabular-nums; color:var(--signal);
+  }
+  .result-sub{font-size:13px; color:var(--ink-dim);}
+  .result-breakdown{
+    margin-top:24px; padding-top:20px; border-top:1px solid var(--line);
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .result-breakdown div{display:flex; justify-content:space-between; font-family:var(--mono); font-size:12.5px;}
+  .result-breakdown .k{color:var(--ink-faint);}
+
+  @media (max-width:760px){
+    .calc-box{grid-template-columns:1fr;}
+    .calc-form{border-right:none; border-bottom:1px solid var(--line);}
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    padding:50px 0 40px;
+    border-top:1px solid var(--line-soft);
+  }
+  .foot-flex{
+    display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:30px;
+  }
+  .foot-brand{font-family:var(--serif); font-size:18px; font-weight:600;}
+  .foot-disclaimer{font-size:12.5px; color:var(--ink-faint); max-width:46ch; line-height:1.6; margin-top:10px;}
+  .foot-links{display:flex; gap:28px;}
+  .foot-links a{font-size:13px; color:var(--ink-dim);}
+  .foot-links a:hover{color:var(--ink);}
+  .foot-bottom{
+    margin-top:36px; padding-top:20px; border-top:1px solid var(--line-soft);
+    font-family:var(--mono); font-size:11px; color:var(--ink-faint);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  }
+
+  .reveal{
+    opacity:0; transform:translateY(14px);
+    transition:opacity .6s ease, transform .6s ease;
+  }
+  .reveal.in{opacity:1; transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-inner">
+    <div class="logo">
+      <svg class="mark" viewBox="0 0 24 24" fill="none">
+        <path d="M12 1L22 7V17L12 23L2 17V7L12 1Z" stroke="#E8E6E1" stroke-width="1.4"/>
+        <path d="M12 1V23M2 7L22 17M22 7L2 17" stroke="#7CFFB2" stroke-width="0.8" opacity="0.6"/>
+      </svg>
+      Obsidian Vault
+    </div>
+    <div class="nav-links">
+      <a href="#ledger">Vaults</a>
+      <a href="#how">How it works</a>
+      <a href="#security">Security</a>
+      <a href="#calc">Calculator</a>
+    </div>
+    <a href="#calc" class="nav-cta">Connect Wallet</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> Mainnet — 6 strategies live</div>
+      <h1>Yield, <em>compounded</em><br>while you sleep.</h1>
+      <p class="hero-sub">Deposit once. Obsidian Vault routes your assets across audited strategies and reinvests the yield automatically — no claiming, no gas roulette, no manual rebalancing.</p>
+      <div class="hero-actions">
+        <a href="#calc" class="btn-primary">Deposit Assets →</a>
+        <a href="#ledger" class="btn-ghost">View Vaults</a>
+      </div>
+    </div>
+    <div class="tvl-card">
+      <div class="tvl-label"><span>Total Value Locked</span><span>Live</span></div>
+      <div class="tvl-number">$<span id="tvlNumber">284,910,442</span><sup>.18</sup></div>
+      <div class="tvl-foot">
+        <div><div class="k">24H VOLUME</div><div class="v">$6,204,113</div></div>
+        <div><div class="k">24H CHANGE</div><div class="v up">+2.41%</div></div>
+        <div><div class="k">DEPOSITORS</div><div class="v">18,204</div></div>
+        <div><div class="k">AVG APY</div><div class="v up">9.62%</div></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="ledger" id="ledger">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>The ledger</h2>
+      <p>Six strategies, ranked by depth. Utilization shown live — thinner bars mean more room before the vault caps deposits.</p>
+    </div>
+
+    <div class="ledger-table reveal">
+      <div class="ledger-row-head">
+        <div>Vault / Strategy</div>
+        <div>APY</div>
+        <div>TVL</div>
+        <div>Utilization</div>
+        <div>Risk</div>
+        <div></div>
+      </div>
+
+      <!-- Row 1 -->
+      <div class="vault-row">
+        <div class="vault-name">
+          <div class="vault-icon" style="background:#1E2A22; color:#7CFFB2; border-color:#2A3A30;">Ξ</div>
+          <div class="meta"><span class="title">ETH Looped Staking</span><span class="strategy">restake.lst → ETH</span></div>
+        </div>
+        <div><span class="col-label">APY</span><span class="apy">14.2%<span class="apy-sub">7d avg 13.8%</span></span></div>
+        <div><span class="col-label">TVL</span><span class="tvl-cell">$92.4M</span></div>
+        <div><span class="col-label">Utilization</span>
+          <div class="util-wrap">
+            <svg class="util-svg" viewBox="0 0 64 24"><rect x="0" y="0" width="64" height="24" fill="#1D2024"/><rect class="util-fill" x="0" y="0" width="0" height="24" fill="#7CFFB2" opacity="0.35" data-target="46"/></svg>
+            <span class="util-pct">46%</span>
+          </div>
+        </div>
+        <div><span class="col-label">Risk</span><span class="risk-pill low">Low</span></div>
+        <div class="row-action"><button>Deposit</button></div>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="vault-row">
+        <div class="vault-name">
+          <div class="vault-icon" style="background:#22221E; color:#D9C56A; border-color:#3A3A2A;">$</div>
+          <div class="meta"><span class="title">Stable Carry</span><span class="strategy">USDC/USDT basis trade</span></div>
+        </div>
+        <div><span class="col-label">APY</span><span class="apy">8.7%<span class="apy-sub">7d avg 8.9%</span></span></div>
+        <div><span class="col-label">TVL</span><span class="tvl-cell">$118.2M</span></div>
+        <div><span class="col-label">Utilization</span>
+          <div class="util-wrap">
+            <svg class="util-svg" viewBox="0 0 64 24"><rect x="0" y="0" width="64" height="24" fill="#1D2024"/><rect class="util-fill" x="0" y="0" width="0" height="24" fill="#7CFFB2" opacity="0.35" data-target="71"/></svg>
+            <span class="util-pct">71%</span>
+          </div>
+        </div>
+        <div><span class="col-label">Risk</span><span class="risk-pill low">Low</span></div>
+        <div class="row-action"><button>Deposit</button></div>
+      </div>
+
+      <!-- Row 3 -->
+      <div class="vault-row">
+        <div class="vault-name">
+          <div class="vault-icon" style="background:#241C2A; color:#C49CF0; border-color:#352A3E;">◎</div>
+          <div class="meta"><span class="title">SOL Validator Yield</span><span class="strategy">native staking pool</span></div>
+        </div>
+        <div><span class="col-label">APY</span><span class="apy">7.1%<span class="apy-sub">7d avg 7.0%</span></span></div>
+        <div><span class="col-label">TVL</span><span class="tvl-cell">$34.6M</span></div>
+        <div><span class="col-label">Utilization</span>
+          <div class="util-wrap">
+            <svg class="util-svg" viewBox="0 0 64 24"><rect x="0" y="0" width="64" height="24" fill="#1D2024"/><rect class="util-fill" x="0" y="0" width="0" height="24" fill="#7CFFB2" opacity="0.35" data-target="28"/></svg>
+            <span class="util-pct">28%</span>
+          </div>
+        </div>
+        <div><span class="col-label">Risk</span><span class="risk-pill low">Low</span></div>
+        <div class="row-action"><button>Deposit</button></div>
+      </div>
+
+      <!-- Row 4 -->
+      <div class="vault-row">
+        <div class="vault-name">
+          <div class="vault-icon" style="background:#2A1E1C; color:#FF9B7E; border-color:#3E2B27;">Δ</div>
+          <div class="meta"><span class="title">Delta-Neutral Funding</span><span class="strategy">perp short / spot long</span></div>
+        </div>
+        <div><span class="col-label">APY</span><span class="apy">19.4%<span class="apy-sub">7d avg 21.1%</span></span></div>
+        <div><span class="col-label">TVL</span><span class="tvl-cell">$21.9M</span></div>
+        <div><span class="col-label">Utilization</span>
+          <div class="util-wrap">
+            <svg class="util-svg" viewBox="0 0 64 24"><rect x="0" y="0" width="64" height="24" fill="#1D2024"/><rect class="util-fill" x="0" y="0" width="0" height="24" fill="#FF6B4A" opacity="0.4" data-target="83"/></svg>
+            <span class="util-pct">83%</span>
+          </div>
+        </div>
+        <div><span class="col-label">Risk</span><span class="risk-pill med">Med</span></div>
+        <div class="row-action"><button>Deposit</button></div>
+      </div>
+
+      <!-- Row 5 -->
+      <div class="vault-row">
+        <div class="vault-name">
+          <div class="vault-icon" style="background:#1E2228; color:#9AB8E8; border-color:#2A3340;">⬡</div>
+          <div class="meta"><span class="title">LP Concentrated</span><span class="strategy">ETH/USDC tight range</span></div>
+        </div>
+        <div><span class="col-label">APY</span><span class="apy">22.8%<span class="apy-sub">7d avg 19.4%</span></span></div>
+        <div><span class="col-label">TVL</span><span class="tvl-cell">$11.3M</span></div>
+        <div><span class="col-label">Utilization</span>
+          <div class="util-wrap">
+            <svg class="util-svg" viewBox="0 0 64 24"><rect x="0" y="0" width="64" height="24" fill="#1D2024"/><rect class="util-fill" x="0" y="0" width="0" height="24" fill="#FF6B4A" opacity="0.4" data-target="64"/></svg>
+            <span class="util-pct">64%</span>
+          </div>
+        </div>
+        <div><span class="col-label">Risk</span><span class="risk-pill med">Med</span></div>
+        <div class="row-action"><button>Deposit</button></div>
+      </div>
+
+      <!-- Row 6 -->
+      <div class="vault-row">
+        <div class="vault-name">
+          <div class="vault-icon" style="background:#1E2A22; color:#7CFFB2; border-color:#2A3A30;">₮</div>
+          <div class="meta"><span class="title">T-Bill Wrapped</span><span class="strategy">tokenized short-duration debt</span></div>
+        </div>
+        <div><span class="col-label">APY</span><span class="apy">5.3%<span class="apy-sub">7d avg 5.3%</span></span></div>
+        <div><span class="col-label">TVL</span><span class="tvl-cell">$6.5M</span></div>
+        <div><span class="col-label">Utilization</span>
+          <div class="util-wrap">
+            <svg class="util-svg" viewBox="0 0 64 24"><rect x="0" y="0" width="64" height="24" fill="#1D2024"/><rect class="util-fill" x="0" y="0" width="0" height="24" fill="#7CFFB2" opacity="0.35" data-target="19"/></svg>
+            <span class="util-pct">19%</span>
+          </div>
+        </div>
+        <div><span class="col-label">Risk</span><span class="risk-pill low">Low</span></div>
+        <div class="row-action"><button>Deposit</button></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="how" id="how">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>How a deposit moves</h2>
+      <p>Three steps, one transaction to start.</p>
+    </div>
+    <div class="how-grid reveal">
+      <div class="how-step">
+        <span class="tag">STEP / DEPOSIT</span>
+        <h3>You deposit once</h3>
+        <p>Send any supported asset to a vault. You receive a receipt token (ovETH, ovUSDC) representing your share — it grows in value as yield accrues, instead of issuing separate reward tokens to claim.</p>
+      </div>
+      <div class="how-step">
+        <span class="tag">STEP / ROUTE</span>
+        <h3>Strategy routes it</h3>
+        <p>The vault's strategy contract puts capital to work — staking, lending, or providing liquidity, depending on the vault. Routing logic and risk parameters are fixed at deployment and published on-chain.</p>
+      </div>
+      <div class="how-step">
+        <span class="tag">STEP / COMPOUND</span>
+        <h3>Yield reinvests itself</h3>
+        <p>Earned yield is harvested and swapped back into principal automatically on a schedule, not manually. Your share token's exchange rate ticks up — withdraw any time, no lockups, no claiming gas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="security" id="security">
+  <div class="wrap sec-flex reveal">
+    <div class="sec-copy">
+      <h2>Audited, not just announced</h2>
+      <p>Every strategy contract is reviewed before deposits open, and again after any parameter change. Reports are published in full, not summarized.</p>
+    </div>
+    <div class="sec-stats">
+      <div class="sec-stat"><div class="n">4</div><div class="l">Independent audits</div></div>
+      <div class="sec-stat"><div class="n">$2.1M</div><div class="l">Bug bounty pool</div></div>
+      <div class="sec-stat"><div class="n">0</div><div class="l">Exploits to date</div></div>
+      <div class="sec-stat"><div class="n">14 mo</div><div class="l">Longest-running vault</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="calc" id="calc">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Project your position</h2>
+      <p>An estimate, not a promise — APY floats with strategy performance.</p>
+    </div>
+    <div class="calc-box reveal">
+      <div class="calc-form">
+        <div class="field">
+          <label for="amount">Deposit amount</label>
+          <div class="amount-input">
+            <span>$</span>
+            <input type="number" id="amount" value="10000" min="0" step="100" inputmode="decimal">
+          </div>
+        </div>
+        <div class="field">
+          <label for="vaultSelect">Vault</label>
+          <select id="vaultSelect">
+            <option value="14.2">ETH Looped Staking — 14.2%</option>
+            <option value="8.7">Stable Carry — 8.7%</option>
+            <option value="7.1">SOL Validator Yield — 7.1%</option>
+            <option value="19.4">Delta-Neutral Funding — 19.4%</option>
+            <option value="22.8">LP Concentrated — 22.8%</option>
+            <option value="5.3">T-Bill Wrapped — 5.3%</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="slider-row"><label for="months" style="margin-bottom:0;">Holding period</label><span class="val" id="monthsVal">12 months</span></div>
+          <input type="range" id="months" min="1" max="36" value="12">
+        </div>
+      </div>
+      <div class="calc-result">
+        <div class="result-label">Estimated balance</div>
+        <div class="result-number" id="resultBalance">$11,219</div>
+        <div class="result-sub" id="resultSub">at 14.2% APY, compounded daily, over 12 months</div>
+        <div class="result-breakdown">
+          <div><span class="k">Principal</span><span id="rPrincipal">$10,000</span></div>
+          <div><span class="k">Yield earned</span><span id="rYield" style="color:var(--signal);">$1,219</span></div>
+          <div><span class="k">Effective APY</span><span id="rApy">14.2%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-flex">
+      <div>
+        <div class="foot-brand">Obsidian Vault</div>
+        <p class="foot-disclaimer">DeFi protocols carry smart-contract, strategy, and market risk. Past yield does not guarantee future yield. This page is a demo interface and is not connected to a live deployment.</p>
+      </div>
+      <div class="foot-links">
+        <a href="#ledger">Vaults</a>
+        <a href="#security">Audits</a>
+        <a href="#how">Docs</a>
+        <a href="#calc">Calculator</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Obsidian Vault — demo build</span>
+      <span>contract: 0x4a9f...e21c</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ---- count-up TVL ----
+  (function(){
+    const el = document.getElementById('tvlNumber');
+    const target = 284910442;
+    let start = null;
+    const duration = 1400;
+    function format(n){ return Math.floor(n).toLocaleString('en-US'); }
+    function step(ts){
+      if(!start) start = ts;
+      const progress = Math.min((ts - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = format(target * eased);
+      if(progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  })();
+
+  // ---- utilization bar fill on scroll into view ----
+  const fills = document.querySelectorAll('.util-fill');
+  const obs = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        const el = entry.target;
+        const pct = parseFloat(el.dataset.target);
+        el.style.transition = 'width 0.9s cubic-bezier(.2,.8,.2,1)';
+        el.setAttribute('width', (64 * pct/100).toFixed(1));
+        obs.unobserve(el);
+      }
+    });
+  }, {threshold:0.3});
+  fills.forEach(f=>obs.observe(f));
+
+  // ---- reveal on scroll ----
+  const revealObs = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add('in');
+        revealObs.unobserve(entry.target);
+      }
+    });
+  }, {threshold:0.15});
+  document.querySelectorAll('.reveal').forEach(el=>revealObs.observe(el));
+
+  // ---- calculator ----
+  const amountInput = document.getElementById('amount');
+  const vaultSelect = document.getElementById('vaultSelect');
+  const monthsInput = document.getElementById('months');
+  const monthsVal = document.getElementById('monthsVal');
+  const resultBalance = document.getElementById('resultBalance');
+  const resultSub = document.getElementById('resultSub');
+  const rPrincipal = document.getElementById('rPrincipal');
+  const rYield = document.getElementById('rYield');
+  const rApy = document.getElementById('rApy');
+
+  function currency(n){
+    return '$' + n.toLocaleString('en-US', {maximumFractionDigits:0});
+  }
+
+  function recalc(){
+    const principal = Math.max(parseFloat(amountInput.value) || 0, 0);
+    const apy = parseFloat(vaultSelect.value);
+    const months = parseInt(monthsInput.value, 10);
+    monthsVal.textContent = months + (months === 1 ? ' month' : ' months');
+
+    const years = months / 12;
+    const dailyRate = apy / 100 / 365;
+    const days = years * 365;
+    const finalBalance = principal * Math.pow(1 + dailyRate, days);
+    const yieldEarned = finalBalance - principal;
+
+    resultBalance.textContent = currency(finalBalance);
+    resultSub.textContent = `at ${apy}% APY, compounded daily, over ${months} ${months===1?'month':'months'}`;
+    rPrincipal.textContent = currency(principal);
+    rYield.textContent = (yieldEarned >= 0 ? '+' : '') + currency(yieldEarned);
+    rApy.textContent = apy + '%';
+  }
+
+  [amountInput, vaultSelect, monthsInput].forEach(el=>{
+    el.addEventListener('input', recalc);
+  });
+  recalc();
+</script>
+
+</body>
+</html>
